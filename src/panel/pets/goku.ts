@@ -9,7 +9,8 @@ export class Goku extends BasePetType {
     // Trạng thái Ultra Instinct
     private isUI: boolean = false;
     private isTransforming: boolean = false;
-    private uiTimer: NodeJS.Timeout | null = null;
+    private uiTimer: ReturnType<typeof setTimeout> | null = null;
+    private _stateResetTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Map tên file GIF tương ứng với từng State
     get spriteDefinitions(): { [key: string]: string } {
@@ -112,9 +113,13 @@ export class Goku extends BasePetType {
 
         let holdDuration = 5000;
 
-        if (this.currentStateEnum === States.sitIdle || this.currentStateEnum === States.lie) {
+        if (
+            this.currentStateEnum === States.sitIdle ||
+            this.currentStateEnum === States.lie
+        ) {
             // Trạng thái tĩnh: 5 đến 10 giây
-            holdDuration = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
+            holdDuration =
+                Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
         } else if (
             this.currentStateEnum === States.runRight ||
             this.currentStateEnum === States.runLeft ||
@@ -122,21 +127,43 @@ export class Goku extends BasePetType {
             this.currentStateEnum === States.walkLeft
         ) {
             // Trạng thái di chuyển: 10 đến 15 giây
-            holdDuration = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
+            holdDuration =
+                Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
         }
 
         if (this._stateResetTimer) {
             clearTimeout(this._stateResetTimer);
         }
-        this._stateResetTimer = setTimeout(() => this.nextState(), holdDuration);
+        this._stateResetTimer = setTimeout(
+            () => this.nextState(),
+            holdDuration,
+        );
     }
 
     // 2. Kích hoạt hóa UI khi nhặt bóng
     override postTransformWorld(): void {
         super.postTransformWorld();
-        
-        if (this.currentStateEnum === States.idleWithBall && !this.isUI && !this.isTransforming) {
+
+        if (
+            this.currentStateEnum === States.idleWithBall &&
+            !this.isUI &&
+            !this.isTransforming
+        ) {
             this.triggerUltraInstinct();
+        }
+    }
+
+    private setCustomSprite(spriteFileName: string): void {
+        if (this.el) {
+            this.el.src = `${this.petRoot}/${spriteFileName}`;
+        }
+    }
+
+    private removeCustomSprite(): void {
+        if (typeof (this as any).refreshState === 'function') {
+            (this as any).refreshState();
+        } else {
+            this.nextState();
         }
     }
 
