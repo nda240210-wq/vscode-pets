@@ -227,3 +227,21 @@ img.pet {
 	border: 5px solid;
 	border-color: #fff transparent transparent #fff;
 }
+/* Goku Pet Styles */
+.pet-goku {
+    width: 32px;
+    height: 32px;
+}
+
+.pet-goku[data-pet-state="sit-idle"] { background-image: url('goku/idle_8fps.gif'); }
+.pet-goku[data-pet-state="lie"] { background-image: url('goku/lie_8fps.gif'); }
+.pet-goku[data-pet-state="walk-right"], 
+.pet-goku[data-pet-state="walk-left"] { background-image: url('goku/walk_8fps.gif'); }
+.pet-goku[data-pet-state="run-right"], 
+.pet-goku[data-pet-state="run-left"],
+.pet-goku[data-pet-state="chase-right"],
+.pet-goku[data-pet-state="chase-left"] { background-image: url('goku/run_8fps.gif'); }
+
+/* Styles cho trạng thái Ultra Instinct */
+.pet-goku[data-pet-sprite="ui_transform.gif"] { background-image: url('goku/ui_transform.gif'); }
+.pet-goku[data-pet-sprite="ui_loop.gif"] { background-image: url('goku/ui_loop.gif'); }
