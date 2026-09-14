@@ -52,6 +52,7 @@ export const enum PetType {
     turtle = 'turtle',
     zappy = 'zappy',
     null = 'null',
+    goku = 'goku',
 }
 
 export const enum PetSpeed {
