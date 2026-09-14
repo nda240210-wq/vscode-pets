@@ -1,89 +1,167 @@
-import { PetColor, PetSpeed, PetState } from '../../common/types';
+import { PetColor } from '../../common/types';
 import { BasePetType } from '../basepettype';
+import { States } from '../states';
 
 export class Goku extends BasePetType {
-  label = 'goku';
-  
-  // Trạng thái biến hình UI
-  private isUI: boolean = false;
-  private isTransforming: boolean = false;
-  private uiTimer: NodeJS.Timeout | null = null;
+    label = 'goku';
+    static possibleColors = [PetColor.default];
 
-  constructor(color: PetColor, speed: PetSpeed) {
-    super(color, speed);
-    this.startRandomBehavior();
-  }
+    // Trạng thái Ultra Instinct
+    private isUI: boolean = false;
+    private isTransforming: boolean = false;
+    private uiTimer: NodeJS.Timeout | null = null;
 
-  override get possibleColors(): PetColor[] {
-    return [PetColor.default];
-  }
+    sequence = {
+        startingState: States.sitIdle,
+        sequenceStates: [
+            {
+                state: States.sitIdle,
+                possibleNextStates: [
+                    States.lie,
+                    States.walkRight,
+                    States.walkLeft,
+                    States.runRight,
+                    States.runLeft,
+                ],
+            },
+            {
+                state: States.lie,
+                possibleNextStates: [
+                    States.walkRight,
+                    States.walkLeft,
+                    States.runRight,
+                    States.runLeft,
+                ],
+            },
+            {
+                state: States.walkRight,
+                possibleNextStates: [
+                    States.sitIdle,
+                    States.walkLeft,
+                    States.runLeft,
+                ],
+            },
+            {
+                state: States.walkLeft,
+                possibleNextStates: [
+                    States.sitIdle,
+                    States.walkRight,
+                    States.runRight,
+                ],
+            },
+            {
+                state: States.runRight,
+                possibleNextStates: [
+                    States.lie,
+                    States.sitIdle,
+                    States.walkLeft,
+                    States.runLeft,
+                ],
+            },
+            {
+                state: States.runLeft,
+                possibleNextStates: [
+                    States.lie,
+                    States.sitIdle,
+                    States.walkRight,
+                    States.runRight,
+                ],
+            },
+            {
+                state: States.chase,
+                possibleNextStates: [States.idleWithBall],
+            },
+            {
+                state: States.idleWithBall,
+                possibleNextStates: [
+                    States.lie,
+                    States.walkRight,
+                    States.walkLeft,
+                    States.runRight,
+                    States.runLeft,
+                ],
+            },
+        ],
+    };
 
-  // 1. Quản lý chuyển đổi hành động ngẫu nhiên (Idle 5-10s <-> Run 10-15s)
-  private startRandomBehavior(): void {
-    if (this.isUI || this.isTransforming || this.isChasingBall) return;
+    // 1. Tùy chỉnh thời gian ngẫu nhiên cho từng trạng thái (Idle 5-10s, Run/Walk 10-15s)
+    override nextState(): void {
+        if (this.isTransforming) return; // Đang gồng biến hình thì không đổi trạng thái
 
-    // Tỉ lệ 50% đứng chơi ngẫu nhiên, 50% chạy
-    const isRunning = Math.random() > 0.5;
+        super.nextState();
 
-    if (isRunning) {
-      // Chạy trong 10 - 15 giây
-      this.setState(PetState.run);
-      const runDuration = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
-      
-      setTimeout(() => {
-        this.startRandomBehavior();
-      }, runDuration);
-    } else {
-      // Đứng yên / Hoạt động nhẹ trong 5 - 10 giây
-      this.setState(PetState.idle);
-      const idleDuration = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
-      
-      setTimeout(() => {
-        this.startRandomBehavior();
-      }, idleDuration);
+        let holdDuration = 5000; // Mặc định
+
+        // Kiểm tra trạng thái hiện tại để set Timer ngẫu nhiên
+        if (this.currentStateEnum === States.sitIdle || this.currentStateEnum === States.lie) {
+            // Tĩnh / Hoạt động nhẹ: Duy trì từ 5s đến 10s (5000ms - 10000ms)
+            holdDuration = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
+        } else if (
+            this.currentStateEnum === States.runRight ||
+            this.currentStateEnum === States.runLeft ||
+            this.currentStateEnum === States.walkRight ||
+            this.currentStateEnum === States.walkLeft
+        ) {
+            // Di chuyển / Chạy: Duy trì từ 10s đến 15s (10000ms - 15000ms)
+            holdDuration = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
+        }
+
+        // Đặt lại thời gian chuyển State tiếp theo cho extension
+        if (this._stateResetTimer) {
+            clearTimeout(this._stateResetTimer);
+        }
+        this._stateResetTimer = setTimeout(() => this.nextState(), holdDuration);
     }
-  }
 
-  // 2. Xử lý khi thả bóng & nhặt được bóng
-  override onChaseBall(): void {
-    // Goku chạy đuổi theo bóng
-    this.setState(PetState.run);
-  }
+    // 2. Xử lý khi bắt bóng -> Hóa Ultra Instinct
+    override postTransformWorld(): void {
+        super.postTransformWorld();
+        
+        // Nhặt được bóng -> Kích hoạt chuỗi biến hình UI
+        if (this.currentStateEnum === States.idleWithBall && !this.isUI && !this.isTransforming) {
+            this.triggerUltraInstinct();
+        }
+    }
 
-  override onCatchBall(): void {
-    // Khi chạm vào bóng -> Thức tỉnh Ultra Instinct
-    this.activateUltraInstinct();
-  }
+    private triggerUltraInstinct(): void {
+        this.isTransforming = true;
 
-  // 3. Logic Hóa UI bằng 2 GIF
-  private activateUltraInstinct(): void {
-    if (this.isUI || this.isTransforming) return;
+        // Bước A: Chạy GIF Biến hình UI (ui_transform.gif)
+        this.setCustomSprite('ui_transform.gif');
 
-    this.isTransforming = true;
+        // Chờ 2 giây cho GIF biến hình chạy xong
+        setTimeout(() => {
+            this.isTransforming = false;
+            this.isUI = true;
 
-    // Bước A: Chạy GIF Biến hình UI (ui_transform.gif)
-    this.setCustomSprite('ui_transform.gif');
+            // Bước B: Chuyển sang GIF Duy trì UI (ui_loop.gif)
+            this.setCustomSprite('ui_loop.gif');
 
-    // Giả định GIF biến hình chạy trong ~1.5 - 2 giây
-    setTimeout(() => {
-      this.isTransforming = false;
-      this.isUI = true;
+            // Bước C: Duy trì UI đúng 10 giây rồi về Base
+            if (this.uiTimer) clearTimeout(this.uiTimer);
+            this.uiTimer = setTimeout(() => {
+                this.revertToBase();
+            }, 10000); // 10s = 10000ms
+        }, 2000);
+    }
 
-      // Bước B: Chuyển sang GIF Duy trì UI (ui_loop.gif)
-      this.setCustomSprite('ui_loop.gif');
+    private revertToBase(): void {
+        this.isUI = false;
+        this.removeCustomSprite(); // Trở lại sprite mặc định của State Machine
+        this.nextState();
+    }
 
-      // Bước C: Duy trì trạng thái UI đúng 10 giây
-      if (this.uiTimer) clearTimeout(this.uiTimer);
-      this.uiTimer = setTimeout(() => {
-        this.revertToBaseForm();
-      }, 10000); // 10s = 10000ms
+    get emoji(): string {
+        return '🥋';
+    }
 
-    }, 2000); // Thời gian chờ chạy xong GIF gồng biến hình
-  }
-
-  // Trở về dạng Base
-  private revertToBaseForm(): void {
-    this.isUI = false;
-    this.startRandomBehavior();
-  }
+    get hello(): string {
+        return `Kakarot says hello!`;
+    }
 }
+
+export const GOKU_NAMES: ReadonlyArray<string> = [
+    'Goku',
+    'Kakarot',
+    'Son Goku',
+];
