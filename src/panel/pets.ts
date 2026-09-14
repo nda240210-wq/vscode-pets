@@ -25,7 +25,9 @@ import { Squirrel } from './pets/squirrel';
 import { Totoro } from './pets/totoro';
 import { Turtle } from './pets/turtle';
 import { Zappy } from './pets/zappy';
+import { Goku } from './pets/goku';
 import { IPetType } from './states';
+
 
 export class PetElement {
     el: HTMLImageElement;
@@ -254,6 +256,8 @@ export function createPet(
             return new Skeleton(...standardPetArguments, PetSpeed.normal);
         case PetType.raccoon:
             return new Raccoon(...standardPetArguments, PetSpeed.normal);
+        case PetType.goku:
+            return new Goku(...standardPetArguments, PetSpeed.normal);
         default:
             throw new InvalidPetException("Pet type doesn't exist");
     }
