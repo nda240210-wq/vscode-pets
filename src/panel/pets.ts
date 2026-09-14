@@ -336,3 +336,83 @@ export function normalizeColor(petColor: PetColor, petType: PetType): PetColor {
         return colors[0];
     }
 }
+export class Goku extends Pet {
+    label = 'goku';
+
+    constructor(
+        spriteElement: HTMLImageElement,
+        collisionElement: HTMLDivElement,
+        speechElement: HTMLDivElement,
+        size: PetSize,
+        left: number,
+        bottom: number,
+        petTree: PetTree,
+        name: string,
+    ) {
+        super(
+            spriteElement,
+            collisionElement,
+            speechElement,
+            size,
+            left,
+            bottom,
+            petTree,
+            name,
+        );
+    }
+
+    initSprite(petColor: PetColor, type: PetType) {
+        this.color = petColor;
+        this.setSprite('idle');
+    }
+
+    override getStateSprite(state: string): string {
+        switch (state) {
+            case 'idle':
+                return 'idle_8fps.gif';
+            case 'walk':
+            case 'run':
+                return 'run_8fps.gif';
+            case 'sit-down':
+            case 'sit':
+                return 'sit_8fps.gif';
+            case 'lie':
+            case 'sleep':
+                return 'lie_8fps.gif';
+            case 'eat':
+                return 'eat_8fps.gif';
+            case 'kick':
+            case 'swipe':
+                return 'kick_8fps.gif';
+            case 'combo':
+            case 'chase':
+                return 'combo_8fps.gif';
+            default:
+                return 'idle_8fps.gif';
+        }
+    }
+
+    override chooseNextState(currentState: string): string {
+        switch (currentState) {
+            case 'idle':
+                const random = Math.random();
+                if (random < 0.3) return 'walk';
+                if (random < 0.5) return 'sit';
+                if (random < 0.7) return 'kick';
+                if (random < 0.85) return 'combo';
+                if (random < 0.95) return 'eat';
+                return 'lie';
+            case 'walk':
+            case 'run':
+                return Math.random() < 0.6 ? 'idle' : 'sit';
+            case 'sit':
+            case 'lie':
+            case 'eat':
+            case 'kick':
+            case 'combo':
+                return 'idle';
+            default:
+                return 'idle';
+        }
+    }
+}
