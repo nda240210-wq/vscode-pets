@@ -28,7 +28,6 @@ import { Zappy } from './pets/zappy';
 import { Goku } from './pets/goku';
 import { IPetType } from './states';
 
-
 export class PetElement {
     el: HTMLImageElement;
     collision: HTMLDivElement;
@@ -132,25 +131,24 @@ export class PetCollection implements IPetCollection {
     seekNewFriends(): void {
         if (this._pets.length <= 1) {
             return;
-        } // You can't be friends with yourself.
+        }
         const theFriendless = this._pets.filter((pet) => !pet.pet.hasFriend);
         if (theFriendless.length <= 1) {
             return;
-        } // Nobody to be friends with.
+        }
         theFriendless.forEach((lonelyPet) => {
             const potentialFriends = theFriendless.filter(
                 (pet) => pet !== lonelyPet,
-            ); // Exclude the lonely pet itself.
+            );
             potentialFriends.forEach((potentialFriend) => {
                 if (!potentialFriend.pet.canChase) {
                     return;
-                } // Pet is busy doing something else.
+                }
                 if (
                     potentialFriend.pet.left > lonelyPet.pet.left &&
                     potentialFriend.pet.left <
                         lonelyPet.pet.left + lonelyPet.pet.width
                 ) {
-                    // We found a possible new friend..
                     console.log(
                         lonelyPet.pet.name,
                         ' wants to be friends with ',
@@ -317,102 +315,18 @@ export function availableColors(petType: PetType): PetColor[] {
             return Skeleton.possibleColors;
         case PetType.raccoon:
             return Raccoon.possibleColors;
+        case PetType.goku:
+            return Goku.possibleColors;
         default:
             throw new InvalidPetException("Pet type doesn't exist");
     }
 }
 
-/**
- * Some pets can only have certain colors, this makes sure they haven't been misconfigured.
- * @param petColor
- * @param petType
- * @returns normalized color
- */
 export function normalizeColor(petColor: PetColor, petType: PetType): PetColor {
     const colors = availableColors(petType);
     if (colors.includes(petColor)) {
         return petColor;
     } else {
         return colors[0];
-    }
-}
-export class Goku extends Pet {
-    label = 'goku';
-
-    constructor(
-        spriteElement: HTMLImageElement,
-        collisionElement: HTMLDivElement,
-        speechElement: HTMLDivElement,
-        size: PetSize,
-        left: number,
-        bottom: number,
-        petTree: PetTree,
-        name: string,
-    ) {
-        super(
-            spriteElement,
-            collisionElement,
-            speechElement,
-            size,
-            left,
-            bottom,
-            petTree,
-            name,
-        );
-    }
-
-    initSprite(petColor: PetColor, type: PetType) {
-        this.color = petColor;
-        this.setSprite('idle');
-    }
-
-    override getStateSprite(state: string): string {
-        switch (state) {
-            case 'idle':
-                return 'idle_8fps.gif';
-            case 'walk':
-            case 'run':
-                return 'run_8fps.gif';
-            case 'sit-down':
-            case 'sit':
-                return 'sit_8fps.gif';
-            case 'lie':
-            case 'sleep':
-                return 'lie_8fps.gif';
-            case 'eat':
-                return 'eat_8fps.gif';
-            case 'kick':
-            case 'swipe':
-                return 'kick_8fps.gif';
-            case 'combo':
-            case 'chase':
-                return 'combo_8fps.gif';
-            default:
-                return 'idle_8fps.gif';
-        }
-    }
-
-    override chooseNextState(currentState: string): string {
-        switch (currentState) {
-            case 'idle':
-                const random = Math.random();
-                if (random < 0.3) return 'walk';
-                if (random < 0.5) return 'sit';
-                if (random < 0.7) return 'kick';
-                if (random < 0.85) return 'combo';
-                if (random < 0.95) return 'eat';
-                return 'lie';
-            case 'walk':
-            case 'run':
-                return Math.random() < 0.6 ? 'idle' : 'sit';
-            case 'sit':
-            case 'lie':
-            case 'eat':
-            case 'kick':
-            case 'combo':
-                return 'idle';
-            default:
-                return 'idle';
-        }
     }
 }
