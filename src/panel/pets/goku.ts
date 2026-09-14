@@ -11,6 +11,26 @@ export class Goku extends BasePetType {
     private isTransforming: boolean = false;
     private uiTimer: NodeJS.Timeout | null = null;
 
+    // Map tên file GIF tương ứng với từng State
+    get spriteDefinitions(): { [key: string]: string } {
+        return {
+            'sit-idle': 'idle_8fps.gif',
+            'lie': 'lie_8fps.gif',
+            'walk-right': 'walk_8fps.gif',
+            'walk-left': 'walk_8fps.gif',
+            'run-right': 'run_8fps.gif',
+            'run-left': 'run_8fps.gif',
+            'chase-right': 'run_8fps.gif',
+            'chase-left': 'run_8fps.gif',
+            'swipe': 'swipe_8fps.gif',
+            'eat': 'eat_8fps.gif',
+            'kick': 'kick_8fps.gif',
+            'combo': 'combo_8fps.gif',
+            'ui-transform': 'ui_transform.gif',
+            'ui-loop': 'ui_loop.gif',
+        };
+    }
+
     sequence = {
         startingState: States.sitIdle,
         sequenceStates: [
@@ -84,17 +104,16 @@ export class Goku extends BasePetType {
         ],
     };
 
-    // 1. Tùy chỉnh thời gian ngẫu nhiên cho từng trạng thái (Idle 5-10s, Run/Walk 10-15s)
+    // 1. Quản lý thời gian ngẫu nhiên (Idle 5-10s, Run/Walk 10-15s)
     override nextState(): void {
-        if (this.isTransforming) return; // Đang gồng biến hình thì không đổi trạng thái
+        if (this.isTransforming) return;
 
         super.nextState();
 
-        let holdDuration = 5000; // Mặc định
+        let holdDuration = 5000;
 
-        // Kiểm tra trạng thái hiện tại để set Timer ngẫu nhiên
         if (this.currentStateEnum === States.sitIdle || this.currentStateEnum === States.lie) {
-            // Tĩnh / Hoạt động nhẹ: Duy trì từ 5s đến 10s (5000ms - 10000ms)
+            // Trạng thái tĩnh: 5 đến 10 giây
             holdDuration = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
         } else if (
             this.currentStateEnum === States.runRight ||
@@ -102,22 +121,20 @@ export class Goku extends BasePetType {
             this.currentStateEnum === States.walkRight ||
             this.currentStateEnum === States.walkLeft
         ) {
-            // Di chuyển / Chạy: Duy trì từ 10s đến 15s (10000ms - 15000ms)
+            // Trạng thái di chuyển: 10 đến 15 giây
             holdDuration = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
         }
 
-        // Đặt lại thời gian chuyển State tiếp theo cho extension
         if (this._stateResetTimer) {
             clearTimeout(this._stateResetTimer);
         }
         this._stateResetTimer = setTimeout(() => this.nextState(), holdDuration);
     }
 
-    // 2. Xử lý khi bắt bóng -> Hóa Ultra Instinct
+    // 2. Kích hoạt hóa UI khi nhặt bóng
     override postTransformWorld(): void {
         super.postTransformWorld();
         
-        // Nhặt được bóng -> Kích hoạt chuỗi biến hình UI
         if (this.currentStateEnum === States.idleWithBall && !this.isUI && !this.isTransforming) {
             this.triggerUltraInstinct();
         }
@@ -126,28 +143,27 @@ export class Goku extends BasePetType {
     private triggerUltraInstinct(): void {
         this.isTransforming = true;
 
-        // Bước A: Chạy GIF Biến hình UI (ui_transform.gif)
+        // Bật GIF gồng biến hình UI
         this.setCustomSprite('ui_transform.gif');
 
-        // Chờ 2 giây cho GIF biến hình chạy xong
+        // Sau 2 giây chuyển sang GIF duy trì UI
         setTimeout(() => {
             this.isTransforming = false;
             this.isUI = true;
 
-            // Bước B: Chuyển sang GIF Duy trì UI (ui_loop.gif)
             this.setCustomSprite('ui_loop.gif');
 
-            // Bước C: Duy trì UI đúng 10 giây rồi về Base
+            // Giữ dạng UI trong đúng 10 giây
             if (this.uiTimer) clearTimeout(this.uiTimer);
             this.uiTimer = setTimeout(() => {
                 this.revertToBase();
-            }, 10000); // 10s = 10000ms
+            }, 10000);
         }, 2000);
     }
 
     private revertToBase(): void {
         this.isUI = false;
-        this.removeCustomSprite(); // Trở lại sprite mặc định của State Machine
+        this.removeCustomSprite();
         this.nextState();
     }
 
