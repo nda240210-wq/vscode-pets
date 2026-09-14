@@ -129,6 +129,7 @@ export const ALL_PETS = [
     PetType.totoro,
     PetType.turtle,
     PetType.zappy,
+    PetType.goku,
 ];
 export const ALL_COLORS = [
     PetColor.black,
